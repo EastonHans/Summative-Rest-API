@@ -1,54 +1,52 @@
 # Inventory Management System
 
-A comprehensive Flask-based REST API for managing an e-commerce inventory with integration to the OpenFoodFacts API for real-time product data enrichment.
+A Flask REST API for running e-commerce inventory, hooked up to OpenFoodFacts so your product data doesn't sit there stale. You give it a barcode, it goes and finds the real details. No copy-pasting nutrition facts by hand.
 
-## 🎯 Features
+## What it actually does
 
-- **CRUD Operations**: Full Create, Read, Update, Delete functionality for inventory items
-- **Real-time API Integration**: Fetch product details from OpenFoodFacts API by barcode or product name
-- **Search Capabilities**: Search inventory by product name or barcode
-- **Data Enrichment**: Automatically enhance stored inventory with external API data
-- **CLI Interface**: User-friendly command-line tool to interact with the API
-- **Comprehensive Testing**: Unit tests for all endpoints and integrations
-- **RESTful Design**: Following REST conventions for all endpoints
-- **JSON Storage**: Simple JSON file-based database for easy setup
+- Full CRUD on inventory items. Create one, read it back, update the quantity, delete it when you're done.
+- Pulls live product info from OpenFoodFacts by barcode or by name.
+- Search by name or barcode, whichever you've got on hand.
+- Auto-enriches whatever's already in your inventory with fresh external data.
+- A CLI that walks you through everything, no need to fight with curl.
+- Solid test coverage across the endpoints and the API integration.
+- Follows REST conventions properly.
+- Stores everything in a plain JSON file. Setup takes about thirty seconds.
 
-## 📋 Requirements
+## What you'll need
 
-- Python 3.7+
-- pip (Python package manager)
-- Git
+Python 3.7 or newer, pip, and Git. That's it.
 
-## 🚀 Installation & Setup
+## Getting it running
 
-### 1. Clone the Repository
+### 1. Grab the repo
 
 ```bash
 git clone git@github.com:EastonHans/Summative-Rest-API.git
 cd Summative-Rest-API
 ```
 
-### 2. Create a Virtual Environment
+### 2. Set up a virtual environment
 
 ```bash
-# On Windows
+# Windows
 python -m venv venv
 venv\Scripts\activate
 
-# On macOS/Linux
+# macOS/Linux
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install Dependencies
+### 3. Install the dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
+### 4. Sort out your environment variables
 
-Create a `.env` file in the project root (already provided):
+There's already a `.env` file in the project root, but here's what's in it:
 
 ```
 FLASK_ENV=development
@@ -56,23 +54,23 @@ FLASK_DEBUG=True
 API_BASE_URL=http://localhost:5000
 ```
 
-### 5. Initialize the Database
+### 5. Fire up the database
 
-The database initializes automatically on first run with mock data. To manually initialize:
+It initializes itself on first run, mock data included. Want to do it manually instead?
 
 ```bash
 python -c "from database import init_database; init_database()"
 ```
 
-## 📡 API Endpoints
+## The API
 
-### Inventory Management
+### Inventory
 
-#### Get All Items
+#### Grab everything
 ```
 GET /inventory
 ```
-**Response:**
+Returns something like:
 ```json
 {
   "status": "success",
@@ -81,11 +79,10 @@ GET /inventory
 }
 ```
 
-#### Get Single Item
+#### Grab one item
 ```
 GET /inventory/<id>
 ```
-**Response:**
 ```json
 {
   "status": "success",
@@ -100,7 +97,7 @@ GET /inventory/<id>
 }
 ```
 
-#### Create New Item
+#### Add something new
 ```
 POST /inventory
 Content-Type: application/json
@@ -116,7 +113,7 @@ Content-Type: application/json
 }
 ```
 
-#### Update Item
+#### Update it
 ```
 PATCH /inventory/<id>
 Content-Type: application/json
@@ -127,26 +124,26 @@ Content-Type: application/json
 }
 ```
 
-#### Delete Item
+#### Get rid of it
 ```
 DELETE /inventory/<id>
 ```
 
-### Search Endpoints
+### Searching
 
-#### Search by Name
+#### By name
 ```
 GET /inventory/search/name?q=<search_term>
 ```
 
-#### Search by Barcode
+#### By barcode
 ```
 GET /inventory/search/barcode?barcode=<barcode>
 ```
 
-### External API Integration
+### Talking to OpenFoodFacts
 
-#### Fetch Product from OpenFoodFacts
+#### Fetch a product straight from their database
 ```
 POST /api/fetch-product
 Content-Type: application/json
@@ -157,7 +154,7 @@ Content-Type: application/json
 }
 ```
 
-#### Enrich Inventory Item with API Data
+#### Enrich something you already stored
 ```
 POST /api/enrich-item/<id>
 Content-Type: application/json
@@ -167,44 +164,45 @@ Content-Type: application/json
 }
 ```
 
-#### Health Check
+#### Health check
 ```
 GET /health
 ```
 
-## 💻 Running the Application
+## Running the thing
 
-### 1. Start the Flask API Server
+### Start the server
 
 ```bash
 python app.py
 ```
 
-The server will start on `http://localhost:5000`
+It'll come up on `http://localhost:5000`.
 
-### 2. Run the CLI Application (in another terminal)
+### Start the CLI
+
+Open a second terminal, activate your venv again, then:
 
 ```bash
-# Activate the virtual environment first
 python cli.py
 ```
 
-## 🎮 CLI Usage Examples
+## Using the CLI
 
-The CLI application provides an interactive menu with the following options:
+It's menu-driven. Here's the gist of it.
 
-### View All Items
+**See everything:**
 ```
 Option: 1
 ```
 
-### Search by Name
+**Search by name:**
 ```
 Option: 3
 Enter product name: Almond
 ```
 
-### Add New Item
+**Add a new item:**
 ```
 Option: 5
 Product name: Almond Butter
@@ -216,84 +214,77 @@ Category: Spreads
 Description: Creamy almond butter
 ```
 
-### Fetch from OpenFoodFacts
+**Pull from OpenFoodFacts:**
 ```
 Option: 8
 Search by (barcode/name): barcode
 Enter barcode: 3017620425035
 ```
 
-### Enrich Item with API Data
+**Enrich an existing item:**
 ```
 Option: 9
 Enter item ID: 1
 Search by (barcode/name): barcode
 ```
 
-### Update Item Stock
+**Update stock:**
 ```
 Option: 6
 Enter item ID: 1
 Quantity: 45
 ```
 
-### Delete Item
+**Delete something:**
 ```
 Option: 7
 Enter item ID: 1
 Confirm deletion: yes
 ```
 
-## 🧪 Testing
-
-Run the test suite to verify all functionality:
+## Testing
 
 ```bash
-# Run all tests
+# the whole suite
 pytest test_app.py -v
 
-# Run with coverage report
+# with a coverage report
 pytest test_app.py --cov=. --cov-report=html
 
-# Run specific test class
+# just one class
 pytest test_app.py::TestAPIEndpoints -v
 
-# Run specific test
+# just one test
 pytest test_app.py::TestAPIEndpoints::test_get_all_inventory -v
 ```
 
-### Test Coverage
+What's actually covered:
 
-The test suite includes:
+- Database operations. 10 tests. Create, read, update, delete, all of it.
+- API endpoints. 17 tests, spanning CRUD, search, and how things fail when they should fail.
+- The OpenFoodFacts integration. 8 tests, all mocked so you're not hammering their servers every run.
+- Error handling. 2 tests, checking the HTTP error responses behave.
 
-- **Database Tests** (10 tests): Create, read, update, delete operations
-- **API Endpoint Tests** (17 tests): All CRUD endpoints, search, error handling
-- **External API Tests** (8 tests): OpenFoodFacts integration with mocked responses
-- **Error Handler Tests** (2 tests): HTTP error handling
-
-Run with coverage to see detailed metrics:
+Want the detailed numbers?
 
 ```bash
 pytest test_app.py --cov=. --cov-report=html
-# Open htmlcov/index.html in browser
+# then open htmlcov/index.html
 ```
 
-## 🔍 Debugging
+## When something breaks
 
-### Using Flask Debug Mode
+### Debug mode
 
-The application runs in debug mode by default. Debug mode enables:
-- Auto-reloading on file changes
-- Interactive debugger
-- Detailed error pages
+It's on by default, which gets you auto-reload on file changes, the interactive debugger, and error pages that actually tell you something.
 
-### Using Postman for API Testing
+### Postman
 
-1. Install [Postman](https://www.postman.com/downloads/)
-2. Import the API endpoints or create requests manually
-3. Test endpoints with various inputs
+1. Grab [Postman](https://www.postman.com/downloads/) if you don't have it.
+2. Build your requests, or import a collection.
+3. Hit the endpoints and see what comes back.
 
-Example Postman collection:
+Here's a starter collection:
 
 ```json
 {
@@ -324,35 +315,35 @@ Example Postman collection:
 }
 ```
 
-### Viewing Logs
+### Logs
 
-Check the console output for Flask request logs and application logs. For persistent logging, redirect output:
+Check your console for the Flask request logs. If you want them saved somewhere:
 
 ```bash
 python app.py > app.log 2>&1
 ```
 
-## 📁 Project Structure
+## How it's laid out
 
 ```
 Summative-Rest-API/
-├── app.py                 # Flask application and API endpoints
-├── database.py            # Database operations and mock data
-├── external_api.py        # OpenFoodFacts API integration
-├── cli.py                 # CLI application for user interaction
-├── test_app.py            # Unit tests
-├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables
-├── .gitignore            # Git ignore rules
-├── inventory.json        # Mock database (auto-generated)
-└── README.md             # This file
+├── app.py                 # Flask app and all the routes
+├── database.py            # DB logic and mock data
+├── external_api.py        # OpenFoodFacts integration
+├── cli.py                 # the command-line interface
+├── test_app.py            # tests
+├── requirements.txt       # dependencies
+├── .env                   # environment variables
+├── .gitignore
+├── inventory.json         # auto-generated mock database
+└── README.md
 ```
 
-## 🔄 API Response Format
+## Response shape
 
-All API responses follow a consistent format:
+Every response follows the same pattern, success or not.
 
-**Success Response:**
+**When it works:**
 ```json
 {
   "status": "success",
@@ -361,7 +352,7 @@ All API responses follow a consistent format:
 }
 ```
 
-**Error Response:**
+**When it doesn't:**
 ```json
 {
   "status": "error",
@@ -369,9 +360,7 @@ All API responses follow a consistent format:
 }
 ```
 
-## 📦 Database Schema
-
-Each inventory item contains:
+## What an inventory item looks like
 
 ```json
 {
@@ -395,17 +384,11 @@ Each inventory item contains:
 }
 ```
 
-## 🌐 OpenFoodFacts API Integration
+## The OpenFoodFacts piece
 
-The system integrates with the [OpenFoodFacts API](https://openfoodfacts.github.io/openfoodfacts-server/api/) to fetch:
+This project leans on the [OpenFoodFacts API](https://openfoodfacts.github.io/openfoodfacts-server/api/) for product names, brands, ingredient lists, nutritional breakdowns (energy, fat, carbs, protein), nutrition grades, categories, and images. It's a genuinely useful free database, and it saves you from typing out ingredient lists by hand.
 
-- Product names and brands
-- Ingredient information
-- Nutritional data (energy, fat, carbs, proteins)
-- Nutrition grades
-- Categories and images
-
-### Example API Response
+Here's what a response from them looks like:
 
 ```json
 {
@@ -426,75 +409,62 @@ The system integrates with the [OpenFoodFacts API](https://openfoodfacts.github.
 }
 ```
 
-## 🐛 Troubleshooting
+## Common headaches
 
-### API Server Not Starting
+**Server won't start:**
 ```bash
-# Check if port 5000 is already in use
+# see what's hogging port 5000
 netstat -tulpn | grep 5000
 
-# Use a different port
+# or just use a different one
 python app.py --port 5001
 ```
 
-### CLI Cannot Connect to API
-```bash
-# Ensure Flask server is running
-# Verify API_BASE_URL in .env matches server address
-# Check firewall settings
-```
+**CLI can't reach the API?** Make sure the Flask server's actually running, double check `API_BASE_URL` in your `.env` matches where the server's listening, and take a peek at your firewall settings while you're at it.
 
-### Tests Failing
+**Tests failing:**
 ```bash
-# Ensure all dependencies are installed
 pip install -r requirements.txt
 
-# Clean test artifacts
 rm -rf .pytest_cache
 rm -rf htmlcov
 
-# Run tests with verbose output
 pytest test_app.py -vv
 ```
 
-### External API Errors
-- Check internet connection
-- Verify barcode/product name exists in OpenFoodFacts database
-- Check API rate limits (typically 1 request per second)
+**Getting errors from the external API?** Check your internet connection first, then confirm the barcode or product name actually exists in OpenFoodFacts. They also rate-limit you, roughly one request per second, so don't hammer it.
 
-## 📝 Environment Variables Reference
+## Environment variables, all of them
 
 ```
-FLASK_ENV              # Flask environment (development/production)
-FLASK_DEBUG            # Enable debug mode
-SECRET_KEY             # Flask secret key
-API_HOST              # API server host
-API_PORT              # API server port
-API_BASE_URL          # Base URL for API
-OPENFOODFACTS_API_TIMEOUT  # Request timeout in seconds
-DATABASE_FILE         # Database file path
+FLASK_ENV                  # development or production
+FLASK_DEBUG                # on or off
+SECRET_KEY                 # Flask's secret key
+API_HOST                   # server host
+API_PORT                   # server port
+API_BASE_URL                # base URL the CLI hits
+OPENFOODFACTS_API_TIMEOUT  # how long to wait, in seconds
+DATABASE_FILE               # where the JSON file lives
 ```
 
-## 🔐 Security Considerations
+## Before you put this anywhere real
 
-For production deployment:
+1. Change `SECRET_KEY`. Don't ship the default.
+2. Set `FLASK_ENV=production`.
+3. Turn `FLASK_DEBUG` off.
+4. Keep separate `.env` files per environment.
+5. Add real authentication. This doesn't have any right now.
+6. Use HTTPS for the external API calls.
+7. Validate and sanitize every input that comes in.
+8. Put rate limiting in front of it.
+9. Swap the JSON file for a proper database. PostgreSQL or MongoDB, take your pick.
+10. Run it behind nginx or Apache, not bare.
 
-1. Change `SECRET_KEY` in `.env`
-2. Set `FLASK_ENV=production`
-3. Set `FLASK_DEBUG=False`
-4. Use environment-specific `.env` files
-5. Implement authentication/authorization
-6. Use HTTPS for external API calls
-7. Validate and sanitize all inputs
-8. Implement rate limiting
-9. Use a production-grade database (PostgreSQL, MongoDB)
-10. Deploy behind a web server (nginx, Apache)
+## Shipping it somewhere
 
-## 🚀 Deployment
+### Docker
 
-### Docker Deployment
-
-Create a `Dockerfile`:
+Drop this in a `Dockerfile`:
 
 ```dockerfile
 FROM python:3.9-slim
@@ -506,50 +476,46 @@ ENV FLASK_APP=app.py
 CMD ["python", "app.py"]
 ```
 
-Build and run:
+Then:
 
 ```bash
 docker build -t inventory-api .
 docker run -p 5000:5000 inventory-api
 ```
 
-### Heroku Deployment
+### Heroku
 
-1. Create `Procfile`:
+Add a `Procfile`:
 ```
 web: python app.py
 ```
 
-2. Deploy:
+Then push:
 ```bash
 git push heroku main
 ```
 
-## 📚 Additional Resources
+## Worth reading
 
-- [Flask Documentation](https://flask.palletsprojects.com/)
+- [Flask docs](https://flask.palletsprojects.com/)
 - [OpenFoodFacts API](https://openfoodfacts.github.io/openfoodfacts-server/api/)
-- [pytest Documentation](https://docs.pytest.org/)
-- [REST API Best Practices](https://restfulapi.net/)
+- [pytest docs](https://docs.pytest.org/)
+- [REST API best practices](https://restfulapi.net/)
 
-## 👥 Contributing
+## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Fork it, branch off (`git checkout -b feature/AmazingFeature`), commit your work, push the branch, and open a pull request. Standard stuff.
 
-## 📄 License
+## License
 
-This project is open source and available under the MIT License.
+MIT. Do what you want with it.
 
-## 💬 Support
+## Got a problem?
 
-For issues, questions, or suggestions, please open an issue on GitHub.
+Open an issue on GitHub and I'll take a look.
 
 ---
 
-**Last Updated:** January 2024
+**Last updated:** June 2026
 **Version:** 1.0.0
 **Author:** Easton Hans
