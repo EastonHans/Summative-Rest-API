@@ -16,6 +16,7 @@ from external_api import fetch_product_details, ExternalAPIIntegration
 def client():
     """Create a test client for the Flask app."""
     app.config['TESTING'] = True
+    init_database()  # Initialize database with test data
     with app.test_client() as client:
         yield client
 
@@ -399,7 +400,8 @@ class TestExternalAPI:
     @patch('external_api.requests.get')
     def test_fetch_product_by_barcode_connection_error(self, mock_get):
         """Test product fetch by barcode with connection error."""
-        mock_get.side_effect = Exception("Connection error")
+        from requests.exceptions import RequestException
+        mock_get.side_effect = RequestException("Connection error")
         
         api = ExternalAPIIntegration()
         result = api.fetch_product_by_barcode("1234567890")
@@ -433,7 +435,7 @@ class TestExternalAPI:
         assert results[0]['product_name'] == "Test Product"
     
     @patch('external_api.requests.get')
-    def test_fetch_product_endpoint(self, client, mock_get):
+    def test_fetch_product_endpoint(self, mock_get, client):
         """Test POST /api/fetch-product endpoint."""
         mock_response = MagicMock()
         mock_response.status_code = 200
