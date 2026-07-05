@@ -5,7 +5,8 @@ from unittest.mock import patch, MagicMock
 from app import app, init_database
 from database import (
     create_item, update_item, delete_item, get_item_by_id,
-    get_all_items, search_items_by_name, search_items_by_barcode
+    get_all_items, search_items_by_name, search_items_by_barcode,
+    bulk_delete_items
 )
 from external_api import fetch_product_details, ExternalAPIIntegration
 
@@ -505,6 +506,175 @@ class TestErrorHandlers:
         assert response.status_code == 405
         data = json.loads(response.data)
         assert data['status'] == 'error'
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v', '--tb=short'])
+
+
+# ==================== PAGINATION & STATS TESTS ====================
+
+class TestPaginationAndStats:
+    """Test pagination on GET /inventory and /inventory/stats."""
+
+    def test_get_inventory_pagination(self, client):
+        """Test paginated GET /inventory returns correct slice."""
+        response = client.get('/inventory?page=1&per_page=2')
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['status'] == 'success'
+        assert len(data['data']) <= 2
+        assert 'page' in data
+        assert 'total_pages' in data
+        assert data['page'] == 1
+        assert data['per_page'] == 2
+
+    def test_get_inventory_pagination_page_two(self, client):
+        """Test second page returns different items."""
+        r1 = client.get('/inventory?page=1&per_page=2')
+        r2 = client.get('/inventory?page=2&per_page=2')
+
+        d1 = json.loads(r1.data)['data']
+        d2 = json.loads(r2.data)['data']
+
+        # IDs on page 1 and page 2 should not overlap
+        ids1 = {i['id'] for i in d1}
+        ids2 = {i['id'] for i in d2}
+        assert ids1.isdisjoint(ids2)
+
+    def test_inventory_stats(self, client):
+        """Test GET /inventory/stats returns correct structure."""
+        response = client.get('/inventory/stats')
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['status'] == 'success'
+        stats = data['data']
+        assert 'total_items' in stats
+        assert 'total_quantity' in stats
+        assert 'average_price' in stats
+        assert 'categories' in stats
+        assert stats['total_items'] > 0
+
+    def test_inventory_stats_category_breakdown(self, client):
+        """Test that stats categories correctly aggregate items."""
+        response = client.get('/inventory/stats')
+        data = json.loads(response.data)
+        stats = data['data']
+
+        # Sum of all category counts should equal total_items
+        category_sum = sum(stats['categories'].values())
+        assert category_sum == stats['total_items']
+
+
+# ==================== BULK DELETE TESTS ====================
+
+class TestBulkDelete:
+    """Test bulk delete database function and endpoint."""
+
+    def test_bulk_delete_items(self):
+        """Test bulk_delete_items deletes multiple items."""
+        init_database()
+        items = get_all_items()
+        ids_to_delete = [items[0]['id'], items[1]['id']]
+        initial_count = len(items)
+
+        result = bulk_delete_items(ids_to_delete)
+
+        assert result['deleted_count'] == 2
+        assert set(result['deleted']) == set(ids_to_delete)
+        assert len(result['not_found']) == 0
+        assert len(get_all_items()) == initial_count - 2
+
+    def test_bulk_delete_nonexistent_ids(self):
+        """Test bulk_delete_items reports not_found correctly."""
+        init_database()
+        result = bulk_delete_items([99998, 99999])
+
+        assert result['deleted_count'] == 0
+        assert set(result['not_found']) == {99998, 99999}
+
+    def test_bulk_delete_endpoint(self, client):
+        """Test DELETE /inventory/bulk-delete endpoint."""
+        items_resp = client.get('/inventory')
+        items = json.loads(items_resp.data)['data']
+        ids = [items[0]['id'], items[1]['id']]
+
+        response = client.delete(
+            '/inventory/bulk-delete',
+            data=json.dumps({"ids": ids}),
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['status'] == 'success'
+        assert data['data']['deleted_count'] == 2
+
+    def test_bulk_delete_missing_ids_field(self, client):
+        """Test bulk-delete with missing ids field returns 400."""
+        response = client.delete(
+            '/inventory/bulk-delete',
+            data=json.dumps({"wrong_key": [1, 2]}),
+            content_type='application/json'
+        )
+
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert data['status'] == 'error'
+
+    def test_bulk_delete_invalid_ids_type(self, client):
+        """Test bulk-delete with non-list ids returns 400."""
+        response = client.delete(
+            '/inventory/bulk-delete',
+            data=json.dumps({"ids": "not-a-list"}),
+            content_type='application/json'
+        )
+
+        assert response.status_code == 400
+
+
+# ==================== INPUT VALIDATION TESTS ====================
+
+class TestInputValidation:
+    """Test that create_item validates input correctly."""
+
+    def test_create_item_negative_quantity_raises(self):
+        """Test that negative quantity raises ValueError."""
+        init_database()
+        with pytest.raises(ValueError, match="quantity"):
+            create_item({
+                "name": "Bad Item",
+                "barcode": "1111111111",
+                "quantity": -5,
+                "price": 1.99,
+                "brand": "Test"
+            })
+
+    def test_create_item_negative_price_raises(self):
+        """Test that negative price raises ValueError."""
+        init_database()
+        with pytest.raises(ValueError, match="price"):
+            create_item({
+                "name": "Bad Item",
+                "barcode": "1111111112",
+                "quantity": 10,
+                "price": -3.00,
+                "brand": "Test"
+            })
+
+    def test_create_item_default_category(self):
+        """Test that missing category defaults to Uncategorized."""
+        init_database()
+        item = create_item({
+            "name": "No Category Item",
+            "barcode": "1111111113",
+            "quantity": 5,
+            "price": 2.50,
+            "brand": "Test"
+        })
+        assert item['category'] == 'Uncategorized'
 
 
 if __name__ == '__main__':
