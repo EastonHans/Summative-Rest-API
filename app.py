@@ -3,7 +3,8 @@ from flask_cors import CORS
 import logging
 from database import (
     init_database, get_all_items, get_item_by_id, create_item,
-    update_item, delete_item, search_items_by_name, search_items_by_barcode
+    update_item, delete_item, search_items_by_name, search_items_by_barcode,
+    bulk_delete_items
 )
 from external_api import fetch_product_details
 
@@ -211,6 +212,42 @@ def remove_item(item_id):
         
     except Exception as e:
         logger.error(f"Error deleting item {item_id}: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@app.route('/inventory/bulk-delete', methods=['DELETE'])
+def bulk_delete():
+    """
+    DELETE /inventory/bulk-delete → Remove multiple items at once.
+
+    Request body (JSON):
+        {
+            "ids": [1, 2, 3]
+        }
+
+    Returns:
+        JSON with deleted and not_found ID lists
+    """
+    try:
+        data = request.get_json()
+        if not data or 'ids' not in data or not isinstance(data['ids'], list):
+            return jsonify({
+                "status": "error",
+                "message": "'ids' must be a list of item IDs"
+            }), 400
+
+        result = bulk_delete_items(data['ids'])
+        return jsonify({
+            "status": "success",
+            "data": result,
+            "message": f"{result['deleted_count']} item(s) deleted"
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error in bulk delete: {e}")
         return jsonify({
             "status": "error",
             "message": str(e)

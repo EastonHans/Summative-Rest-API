@@ -80,9 +80,15 @@ def get_item_by_id(item_id: int) -> Optional[Dict]:
     return None
 
 def create_item(item_data: Dict) -> Dict:
-    """Create a new inventory item."""
+    """Create a new inventory item with basic field validation."""
     items = load_inventory()
-    
+
+    # Validate types
+    if not isinstance(item_data.get('quantity', 0), (int, float)) or item_data.get('quantity', 0) < 0:
+        raise ValueError("quantity must be a non-negative number")
+    if not isinstance(item_data.get('price', 0.0), (int, float)) or item_data.get('price', 0.0) < 0:
+        raise ValueError("price must be a non-negative number")
+
     # Generate new ID
     new_id = max([item['id'] for item in items], default=0) + 1
     
@@ -91,10 +97,10 @@ def create_item(item_data: Dict) -> Dict:
         "name": item_data.get("name"),
         "barcode": item_data.get("barcode"),
         "quantity": item_data.get("quantity", 0),
-        "price": item_data.get("price", 0.0),
+        "price": round(float(item_data.get("price", 0.0)), 2),
         "brand": item_data.get("brand"),
-        "category": item_data.get("category"),
-        "description": item_data.get("description"),
+        "category": item_data.get("category", "Uncategorized"),
+        "description": item_data.get("description", ""),
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
         "external_api_data": item_data.get("external_api_data", {})
@@ -142,3 +148,30 @@ def search_items_by_barcode(barcode: str) -> Optional[Dict]:
         if item['barcode'] == barcode:
             return item
     return None
+
+
+def bulk_delete_items(item_ids: List[int]) -> Dict:
+    """
+    Delete multiple inventory items at once.
+
+    Args:
+        item_ids: List of item IDs to delete
+
+    Returns:
+        Dict with counts of deleted and not-found IDs
+    """
+    items = load_inventory()
+    existing_ids = {item['id'] for item in items}
+    to_delete = set(item_ids)
+
+    found = to_delete & existing_ids
+    not_found = to_delete - existing_ids
+
+    items = [item for item in items if item['id'] not in found]
+    save_inventory(items)
+
+    return {
+        "deleted": sorted(found),
+        "not_found": sorted(not_found),
+        "deleted_count": len(found)
+    }
