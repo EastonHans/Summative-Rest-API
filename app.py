@@ -24,13 +24,36 @@ init_database()
 @app.route('/inventory', methods=['GET'])
 def get_inventory():
     """
-    GET /inventory → Fetch all items
-    
+    GET /inventory → Fetch all items (supports optional pagination)
+
+    Query params:
+        page (int): Page number, 1-based (optional)
+        per_page (int): Items per page, default 10 (optional)
+
     Returns:
-        JSON array of all inventory items
+        JSON array of all inventory items, with pagination metadata if requested
     """
     try:
         items = get_all_items()
+
+        # Optional pagination
+        page = request.args.get('page', type=int)
+        per_page = request.args.get('per_page', default=10, type=int)
+
+        if page is not None:
+            start = (page - 1) * per_page
+            end = start + per_page
+            paginated = items[start:end]
+            return jsonify({
+                "status": "success",
+                "data": paginated,
+                "count": len(paginated),
+                "total": len(items),
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (len(items) + per_page - 1) // per_page
+            }), 200
+
         return jsonify({
             "status": "success",
             "data": items,
@@ -375,6 +398,56 @@ def enrich_item_with_api(item_id):
         
     except Exception as e:
         logger.error(f"Error enriching item: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+# ==================== STATS ENDPOINT ====================
+
+@app.route('/inventory/stats', methods=['GET'])
+def inventory_stats():
+    """
+    GET /inventory/stats → Return summary statistics for the inventory.
+
+    Returns:
+        JSON object with total items, total quantity, average price, and category breakdown
+    """
+    try:
+        items = get_all_items()
+
+        if not items:
+            return jsonify({
+                "status": "success",
+                "data": {
+                    "total_items": 0,
+                    "total_quantity": 0,
+                    "average_price": 0,
+                    "categories": {}
+                }
+            }), 200
+
+        total_quantity = sum(i.get('quantity', 0) for i in items)
+        average_price = round(sum(i.get('price', 0) for i in items) / len(items), 2)
+
+        categories = {}
+        for item in items:
+            cat = item.get('category', 'Uncategorized')
+            categories[cat] = categories.get(cat, 0) + 1
+
+        return jsonify({
+            "status": "success",
+            "data": {
+                "total_items": len(items),
+                "total_quantity": total_quantity,
+                "average_price": average_price,
+                "categories": categories
+            }
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching stats: {e}")
         return jsonify({
             "status": "error",
             "message": str(e)
